@@ -6,36 +6,36 @@ type nodoLista[T any] struct {
 }
 
 type listaEnlazada[T any] struct {
-	largo int
+	largo   int
 	primero *nodoLista[T]
-	ultimo *nodoLista[T]
+	ultimo  *nodoLista[T]
 }
 
 type iteradorLista[T any] struct {
-	lista *listaEnlazada[T]
-	anterior *nodo[T]
-	actual *nodo[T]
+	lista    *listaEnlazada[T]
+	anterior *nodoLista[T]
+	actual   *nodoLista[T]
 }
 
 func nodoCrear[T any](dato T) *nodoLista[T] {
-	return &nodolista[T]{
+	return &nodoLista[T]{
 		dato: dato,
 		prox: nil,
 	}
 }
 
 func CrearListaEnlazada[T any]() Lista[T] {
-	return &listaEnlazada[T] {
-		largo: 0,
+	return &listaEnlazada[T]{
+		largo:   0,
 		primero: nil,
-		ultimo: nil,
+		ultimo:  nil,
 	}
 }
 
 func (l *listaEnlazada[T]) inicializarLista(nuevo *nodoLista[T]) {
 	l.primero = nuevo
 	l.ultimo = nuevo
-} 
+}
 
 func (l *listaEnlazada[T]) EstaVacia() bool {
 	return l.primero == nil
@@ -76,7 +76,7 @@ func (l *listaEnlazada[T]) BorrarPrimero() T {
 	if l.primero == nil {
 		l.ultimo = nil
 	}
-	return primero.valor
+	return primero.dato
 }
 
 func (l *listaEnlazada[T]) VerPrimero() T {
@@ -108,10 +108,10 @@ func (l *listaEnlazada[T]) Iterar(visitar func(T) bool) {
 }
 
 func (l *listaEnlazada[T]) Iterador() IteradorLista[T] {
-	return &iteradorLista[T] {
-		lista: l,
+	return &iteradorLista[T]{
+		lista:    l,
 		anterior: nil,
-		actual: l.primero
+		actual:   l.primero,
 	}
 }
 
@@ -144,11 +144,11 @@ func (it *iteradorLista[T]) Insertar(valor T) {
 
 	nuevo.prox = it.actual
 	it.anterior.prox = nuevo
-	
+
 	if it.actual == nil {
 		it.lista.ultimo = nuevo
 	}
-	
+
 	it.actual = nuevo
 	it.lista.largo++
 }
@@ -165,7 +165,7 @@ func (it *iteradorLista[T]) Borrar() T {
 		it.actual = it.actual.prox
 
 		if it.lista.primero == nil {
-			it.lista.ultimo == nil
+			it.lista.ultimo = nil
 		}
 	} else {
 		it.anterior.prox = it.actual.prox
