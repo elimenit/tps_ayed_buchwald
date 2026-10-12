@@ -49,8 +49,9 @@ func (l *listaEnlazada[T]) InsertarPrimero(valor T) {
 	} else {
 		nuevo.prox = l.primero
 		l.primero = nuevo
-		l.largo++
+
 	}
+	l.largo++
 }
 
 func (l *listaEnlazada[T]) InsertarUltimo(valor T) {
@@ -61,8 +62,9 @@ func (l *listaEnlazada[T]) InsertarUltimo(valor T) {
 	} else {
 		l.ultimo.prox = nuevo
 		l.ultimo = nuevo
-		l.largo++
+
 	}
+	l.largo++
 }
 
 func (l *listaEnlazada[T]) BorrarPrimero() T {
