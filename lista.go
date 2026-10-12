@@ -37,19 +37,26 @@ type Lista[T any] interface {
 
 type IteradorLista[T any] interface {
 
-	//
+	// Ver actual devuelve el elemento apuntado por el iterador. Si el iterador ya termino de 
+	// recorrer la lista, lanza un panic advirtiendo que "El iterador termino de iterar".
 	VerActual() T
 
-	//
+	// HayAlgoMas devuelve true si el iterador se encuentra sobre un elemento de la lista, o 
+	// false si ya termino de recorrerla.
 	HayAlgoMas() bool
 
-	//
+	// Avanzar mueve el iterador al siguiente elemento de la lista. Si el iterador ya termino
+	// de recorrerla, lanza un panic advirtiendo "El iterador termino de iterar".
 	Avanzar()
 
-	//
+	// Insertar agrega un nuevo elemento a la lista en la posicion actual del iterador.
+	// Luego de la accion el iterador queda apuntando al elemento insertado.
 	Insertar(T)
 
-	//
+	// Borrar elimina el elemento actual del iterador y devuelve su dato. Luego de la accion, el
+	// el elemento queda apuntando al siguiente elemento.
+	// Precondicion: el iterador no debe haber terminado de recorrer la lista. En caso contrario
+	// lanza un panic advirtiendo "El iterador termino de iterar".
 	Borrar() T
 }
 
