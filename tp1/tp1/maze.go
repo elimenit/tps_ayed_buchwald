@@ -2,39 +2,44 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"maze/tdas/cola"
 	"os"
 	"strconv"
 	"strings"
-
-	"maze/tdas/cola"
-	"maze/tdas/coordenada"
-	"maze/tdas/matriz"
 )
 
-// desplazamiento representa un movimiento en el laberinto
-type desplazamiento struct {
+// Constantes para evitar literales en el código
+const (
+	Pared  = '#'
+	Inicio = 'S'
+	Fin    = 'E'
+
+	MovAbajo     = "ABAJO"
+	MovArriba    = "ARRIBA"
+	MovDerecha   = "DERECHA"
+	MovIzquierda = "IZQUIERDA"
+	MsjError     = "ERROR"
+)
+
+var direcciones = []struct {
 	df, dc int
-	nombre string
+}{
+	{0, 1},  // Derecha
+	{1, 0},  // Abajo
+	{-1, 0}, // Arriba
+	{0, -1}, // Izquierda
 }
 
-// En Go no se pueden declarar slices/arrays como "const".
-// La buena práctica es usar variables a nivel de paquete (no exportadas) y no mutarlas.
-var movimientosPosibles = [...]desplazamiento{
-	{0, 1, "DERECHA"},
-	{1, 0, "ABAJO"},
-	{-1, 0, "ARRIBA"},
-	{0, -1, "IZQUIERDA"},
+type Coordenada struct {
+	f, c int
 }
 
-// leerLaberintos lee la entrada desde STDIN y devuelve un slice de matrices ya completadas.
-func leerLaberintos() ([]matriz.Matriz[rune], error) {
-	var listaLaberintos []matriz.Matriz[rune]
+// leerLaberintos lee por entrada estándar y devuelve un slice de matrices bidimensionales ([][]rune)
+func leerLaberintos() [][][]rune {
+	var listaLaberintos [][][]rune
 	scanner := bufio.NewScanner(os.Stdin)
-
-	leyendoDimensiones := true
-	var numeroFilas, numeroColumnas, filaActual int
-	var laberintoActual matriz.Matriz[rune]
 
 	for scanner.Scan() {
 		linea := strings.TrimSpace(scanner.Text())
@@ -42,212 +47,171 @@ func leerLaberintos() ([]matriz.Matriz[rune], error) {
 			continue
 		}
 
-		if leyendoDimensiones {
-			var err error
-			numeroFilas, numeroColumnas, err = parsearDimensiones(linea)
-			if err != nil {
-				return nil, err
-			}
+		dimensiones := strings.Fields(linea)
+		filas, _ := strconv.Atoi(dimensiones[0])
 
-			laberintoActual = matriz.CrearMatriz[rune](numeroFilas, numeroColumnas)
-			filaActual = 0
-			leyendoDimensiones = false
-
-		} else {
-			for c, char := range linea {
-				if c < numeroColumnas {
-					laberintoActual.Guardar(filaActual, c, char)
-				}
-			}
-			filaActual++
-
-			if filaActual == numeroFilas {
-				listaLaberintos = append(listaLaberintos, laberintoActual)
-				leyendoDimensiones = true
-			}
+		var laberinto [][]rune
+		for i := 0; i < filas; i++ {
+			scanner.Scan()
+			filaTexto := strings.TrimSpace(scanner.Text())
+			laberinto = append(laberinto, []rune(filaTexto))
 		}
+
+		listaLaberintos = append(listaLaberintos, laberinto)
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error leyendo la entrada estándar: %w", err)
+		panic(fmt.Sprintf("Hubo un error al leer STDIN: %v", err))
 	}
 
-	return listaLaberintos, nil
+	return listaLaberintos
 }
 
-// parsearDimensiones extrae las filas y columnas de una línea de texto.
-func parsearDimensiones(linea string) (int, int, error) {
-	partes := strings.Fields(linea)
-	if len(partes) != 2 {
-		return 0, 0, fmt.Errorf("formato de dimensiones incorrecto: %s", linea)
-	}
-
-	filas, err := strconv.Atoi(partes[0])
+// BuscarCamino orquesta la búsqueda: ubica los extremos y ejecuta BFS
+func BuscarCamino(laberinto [][]rune) ([]Coordenada, error) {
+	inicio, fin, err := encontrarExtremos(laberinto)
 	if err != nil {
-		return 0, 0, fmt.Errorf("error al convertir filas: %w", err)
+		return nil, err
 	}
 
-	columnas, err := strconv.Atoi(partes[1])
-	if err != nil {
-		return 0, 0, fmt.Errorf("error al convertir columnas: %w", err)
-	}
-
-	return filas, columnas, nil
+	return bfs(laberinto, inicio, fin)
 }
 
-// encontrarExtremos busca la posición inicial (S) y final (E) en el laberinto.
-func encontrarExtremos(grid matriz.Matriz[rune]) (coordenada.Coordenada, coordenada.Coordenada, error) {
-	filas, columnas := grid.Dimensiones()
-	start := coordenada.CrearCoordenada(-1, -1)
-	end := coordenada.CrearCoordenada(-1, -1)
-	encontroS, encontroE := false, false
+// encontrarExtremos recorre el laberinto para devolver la posición S y E
+func encontrarExtremos(laberinto [][]rune) (Coordenada, Coordenada, error) {
+	inicio := Coordenada{-1, -1}
+	fin := Coordenada{-1, -1}
 
-	for i := 0; i < filas; i++ {
-		for j := 0; j < columnas; j++ {
-			val := grid.Obtener(i, j)
-			if val == 'S' {
-				start = coordenada.CrearCoordenada(i, j)
-				encontroS = true
-			} else if val == 'E' {
-				end = coordenada.CrearCoordenada(i, j)
-				encontroE = true
+	for f, fila := range laberinto {
+		for c, valor := range fila {
+			if valor == Inicio {
+				inicio = Coordenada{f, c}
+			} else if valor == Fin {
+				fin = Coordenada{f, c}
 			}
 		}
 	}
 
-	if !encontroS || !encontroE {
-		return start, end, fmt.Errorf("faltan los puntos de inicio (S) o fin (E) en el laberinto")
+	if inicio.f == -1 || fin.f == -1 {
+		return inicio, fin, errors.New("no se encontró inicio o fin en el laberinto")
 	}
 
-	return start, end, nil
+	return inicio, fin, nil
 }
 
-// bfs encuentra la ruta más corta usando Búsqueda en Anchura.
-func bfs(grid matriz.Matriz[rune], start coordenada.Coordenada, end coordenada.Coordenada) []coordenada.Coordenada {
-	filas, columnas := grid.Dimensiones()
-	visitado := matriz.CrearMatriz[bool](filas, columnas)
-	padres := matriz.CrearMatriz[coordenada.Coordenada](filas, columnas)
+// bfs ejecuta la búsqueda en anchura pura, devuelve el camino de Coordenadas
+func bfs(laberinto [][]rune, inicio Coordenada, fin Coordenada) ([]Coordenada, error) {
+	filas := len(laberinto)
+	columnas := len(laberinto[0])
 
-	// Inicializar la matriz de padres
-	posicionInvalida := coordenada.CrearCoordenada(-1, -1)
+	visitados := make([][]bool, filas)
+	padres := make([][]Coordenada, filas)
+
 	for i := 0; i < filas; i++ {
+		visitados[i] = make([]bool, columnas)
+		padres[i] = make([]Coordenada, columnas)
 		for j := 0; j < columnas; j++ {
-			padres.Guardar(i, j, posicionInvalida)
+			padres[i][j] = Coordenada{-1, -1}
 		}
 	}
 
-	queue := cola.CrearColaEnlazada[coordenada.Coordenada]()
-	queue.Encolar(start)
-	visitado.Guardar(start.ObtenerFila(), start.ObtenerColumna(), true)
+	q := cola.CrearColaEnlazada[Coordenada]()
+	q.Encolar(inicio)
+	visitados[inicio.f][inicio.c] = true
 
-	for !queue.EstaVacia() {
-		actual := queue.Desencolar()
+	for !q.EstaVacia() {
+		actual := q.Desencolar()
 
-		if actual == end {
+		if actual == fin {
 			break
 		}
 
-		for _, mov := range movimientosPosibles {
-			nf, nc := actual.ObtenerFila()+mov.df, actual.ObtenerColumna()+mov.dc
-			siguiente := coordenada.CrearCoordenada(nf, nc)
+		for _, dir := range direcciones {
+			vecino := Coordenada{actual.f + dir.df, actual.c + dir.dc}
 
-			if fueraDeLimites(nf, nc, filas, columnas) ||
-				grid.Obtener(nf, nc) == '#' ||
-				visitado.Obtener(nf, nc) {
-				continue
+			if esPosicionValida(laberinto, vecino, filas, columnas) && !visitados[vecino.f][vecino.c] {
+				visitados[vecino.f][vecino.c] = true
+				padres[vecino.f][vecino.c] = actual
+				q.Encolar(vecino)
 			}
-
-			visitado.Guardar(nf, nc, true)
-			padres.Guardar(nf, nc, actual)
-			queue.Encolar(siguiente)
 		}
 	}
 
-	return reconstruirCamino(padres, start, end, visitado)
-}
-
-// fueraDeLimites es una función auxiliar que verifica si una coordenada pertenece al tablero.
-func fueraDeLimites(f, c, filas, columnas int) bool {
-	return f < 0 || f >= filas || c < 0 || c >= columnas
-}
-
-// reconstruirCamino toma la matriz de padres y la invierte para devolver la ruta secuencial.
-func reconstruirCamino(padres matriz.Matriz[coordenada.Coordenada], start, end coordenada.Coordenada, visitado matriz.Matriz[bool]) []coordenada.Coordenada {
-	if !visitado.Obtener(end.ObtenerFila(), end.ObtenerColumna()) {
-		return nil
+	if !visitados[fin.f][fin.c] {
+		return nil, errors.New("no hay camino posible")
 	}
 
-	var path []coordenada.Coordenada
-	actual := end
-	posicionInvalida := coordenada.CrearCoordenada(-1, -1)
+	return reconstruirCamino(padres, inicio, fin), nil
+}
 
-	for actual != posicionInvalida {
-		path = append(path, actual)
-		if actual == start {
+func esPosicionValida(laberinto [][]rune, pos Coordenada, filas, columnas int) bool {
+	if pos.f < 0 || pos.f >= filas || pos.c < 0 || pos.c >= columnas {
+		return false
+	}
+	if laberinto[pos.f][pos.c] == Pared {
+		return false
+	}
+	return true
+}
+
+// reconstruirCamino genera el slice de coordenadas desde el inicio hasta el fin
+func reconstruirCamino(padres [][]Coordenada, inicio, fin Coordenada) []Coordenada {
+	var caminoInvertido []Coordenada
+	actual := fin
+	coordenadaVacia := Coordenada{-1, -1}
+
+	for actual != coordenadaVacia {
+		caminoInvertido = append(caminoInvertido, actual)
+		if actual == inicio {
 			break
 		}
-		actual = padres.Obtener(actual.ObtenerFila(), actual.ObtenerColumna())
+		actual = padres[actual.f][actual.c]
 	}
 
-	// Invertir el camino ya que fue construido desde el fin hacia el inicio
-	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
-		path[i], path[j] = path[j], path[i]
+	// Invertir el slice
+	camino := make([]Coordenada, len(caminoInvertido))
+	for i, j := 0, len(caminoInvertido)-1; i < len(caminoInvertido); i, j = i+1, j-1 {
+		camino[i] = caminoInvertido[j]
 	}
 
-	return path
+	return camino
 }
 
-// convertirAMovimientos mapea una lista de coordenadas a sus instrucciones de texto correspondientes.
-func convertirAMovimientos(camino []coordenada.Coordenada) []string {
-	var movimientosTexto []string
+// convertirAMovimientos traduce los saltos entre coordenadas consecutivas a un slice de strings direccionales
+func convertirAMovimientos(camino []Coordenada) []string {
+	var movimientos []string
 
 	for i := 0; i < len(camino)-1; i++ {
 		actual := camino[i]
 		siguiente := camino[i+1]
 
-		df := siguiente.ObtenerFila() - actual.ObtenerFila()
-		dc := siguiente.ObtenerColumna() - actual.ObtenerColumna()
+		df := siguiente.f - actual.f
+		dc := siguiente.c - actual.c
 
-		for _, mov := range movimientosPosibles {
-			if mov.df == df && mov.dc == dc {
-				movimientosTexto = append(movimientosTexto, mov.nombre)
-				break
-			}
+		if df == 1 {
+			movimientos = append(movimientos, MovAbajo)
+		} else if df == -1 {
+			movimientos = append(movimientos, MovArriba)
+		} else if dc == 1 {
+			movimientos = append(movimientos, MovDerecha)
+		} else if dc == -1 {
+			movimientos = append(movimientos, MovIzquierda)
 		}
 	}
-	return movimientosTexto
+	return movimientos
 }
-
-// resolverLaberinto orquesta la búsqueda y la impresión de los movimientos para un único laberinto.
-func resolverLaberinto(grid matriz.Matriz[rune]) {
-	start, end, err := encontrarExtremos(grid)
-	if err != nil {
-		fmt.Println("ERROR:", err)
-		return
-	}
-
-	path := bfs(grid, start, end)
-	if path == nil {
-		fmt.Println("ERROR")
-		return
-	}
-
-	movimientos := convertirAMovimientos(path)
-	fmt.Println(len(movimientos)) // Cantidad de pasos = transiciones (len(path) - 1)
-
-	if len(movimientos) > 0 {
-		fmt.Println(strings.Join(movimientos, " "))
-	}
-}
-
 func main() {
-	laberintos, err := leerLaberintos()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error al procesar laberintos:", err)
-		os.Exit(1)
-	}
+	laberintos := leerLaberintos()
 
 	for _, laberinto := range laberintos {
-		resolverLaberinto(laberinto)
+		camino, err := BuscarCamino(laberinto)
+
+		if err != nil {
+			fmt.Println(MsjError)
+		} else {
+			movimientos := convertirAMovimientos(camino)
+			fmt.Println(len(movimientos))
+			fmt.Println(strings.Join(movimientos, " "))
+		}
 	}
 }
