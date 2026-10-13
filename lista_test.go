@@ -420,3 +420,106 @@ func TestIteradorPanicVerActualVolumen(t *testing.T) {
 	}
 
 }
+
+func TestIteradorVacioAvanzar(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+
+	require.Panics(t, func() { ie.Avanzar() })
+}
+func TestIteradorAvanzar(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+
+	l.InsertarPrimero(10)
+	l.InsertarUltimo(25)
+	ie := l.Iterador()
+	require.Equal(t, ie.VerActual(), 10)
+	ie.Avanzar()
+	require.Equal(t, ie.VerActual(), 25)
+}
+
+func TestIteradorPanicAvanzar(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+
+	l.InsertarPrimero(10)
+	ie := l.Iterador()
+	ie.Avanzar()
+	require.Panics(t, func() { ie.Avanzar() })
+}
+
+func TestIteradorPanicAvanzarVolumen(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+
+	for i := range volumen {
+		l.InsertarUltimo(i)
+	}
+
+	ie := l.Iterador()
+	for i := 0; i < volumen; i++ {
+		ie.Avanzar()
+	}
+	require.Panics(t, func() { ie.Avanzar() })
+}
+
+func TestIteradorInsertarVacio(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+	ie.Insertar(5)
+	require.Equal(t, ie.VerActual(), 5)
+}
+
+func TestIteradorInsertarVolumen(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+
+	for i := range volumen {
+		ie.Insertar(i)
+		require.Equal(t, ie.VerActual(), i)
+	}
+}
+
+func TestIteradorBorrarPanic(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+
+	require.Panics(t, func() { ie.Borrar() })
+
+	ie.Insertar(10)
+	ie.Borrar()
+	require.Panics(t, func() { ie.Borrar() })
+}
+
+func TestIteradorBorrarVacio(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+	ie.Insertar(10)
+	ie.Borrar()
+	require.False(t, ie.HayAlgoMas())
+}
+func TestIteradorBorrarVacioVolumen(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+
+	for i := range volumen {
+		ie.Insertar(i)
+	}
+
+	for i := volumen; i > 0; i-- {
+		ie.Borrar()
+	}
+	require.False(t, ie.HayAlgoMas())
+}
+
+func TestIteradorBorrarVolumenPanic(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
+	ie := l.Iterador()
+
+	for i := range volumen {
+		ie.Insertar(i)
+	}
+
+	for i := volumen; i > 0; i-- {
+		ie.Borrar()
+	}
+	require.Panics(t, func() { ie.Borrar() }, mensajeIteradorTermino)
+}
