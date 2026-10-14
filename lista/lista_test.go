@@ -324,15 +324,45 @@ func TestLargoVolumen(t *testing.T) {
 	require.Equal(t, l.Largo(), 0)
 }
 
-// primitiva deberia iterar los elementos de la lista (iterador interno)
-func TestIterar(t *testing.T) {
-	l := TDALista.CrearListaEnlazada[int]()
+// Validar la estabilidad de elementos
+func TestIterarIgual(t *testing.T) {
+	lista := TDALista.CrearListaEnlazada[int]()
 
+	lista.InsertarUltimo(10)
+	lista.InsertarUltimo(20)
+	lista.InsertarUltimo(30)
+
+	var obtenidos []int
+
+	lista.Iterar(func(elemento int) bool {
+		obtenidos = append(obtenidos, elemento)
+		return true
+	})
+
+	esperados := []int{10, 20, 30}
+
+	for i, e := range obtenidos {
+		require.Equal(t, e, esperados[i])
+	}
+}
+
+func TestIterarDuplicado(t *testing.T) {
+	l := TDALista.CrearListaEnlazada[int]()
 	l.InsertarPrimero(10)
 	l.InsertarUltimo(20)
+	l.InsertarUltimo(30)
 
-	l.Iterar(func(i int) bool { return i%2 == 0 })
+	var obtenidos []int
+	var esperados = []int{20, 40, 60}
 
+	l.Iterar(func(e int) bool {
+		obtenidos = append(obtenidos, e*2)
+		return true
+	})
+
+	for i, e := range obtenidos {
+		require.Equal(t, e, esperados[i])
+	}
 }
 
 // Iterador Externo
