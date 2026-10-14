@@ -1,7 +1,7 @@
 package lista_test
 
 import (
-	TDALista "lista/lista"
+	TDALista "tdas/lista"
 	"testing"
 
 	"github.com/stretchr/testify/require"
