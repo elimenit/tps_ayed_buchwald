@@ -18,6 +18,13 @@ const (
 	_BORRADO
 )
 
+// Estructura del iterador externo
+type iteradorHash[K comparable, V any] struct {
+	hash     *hash[K, V]
+	posicion int
+	vistos   int
+}
+
 type elemento[K comparable, V any] struct {
 	clave  K
 	dato   V
@@ -159,13 +166,6 @@ func (h *hash[K, V]) Iterar(visitar func(clave K, dato V) bool) {
 			}
 		}
 	}
-}
-
-// Estructura del iterador externo
-type iteradorHash[K comparable, V any] struct {
-	hash     *hash[K, V]
-	posicion int
-	vistos   int
 }
 
 // Creación del iterador externo
