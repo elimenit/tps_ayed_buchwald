@@ -1,3 +1,4 @@
 **/.env
 *.mod
 *.sum
+**/*.zip
