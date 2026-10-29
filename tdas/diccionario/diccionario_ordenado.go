@@ -10,3 +10,9 @@ type DiccionarioOrdenado[K comparable, V any] interface {
 	// IteradorRango crea un IterDiccionario que sólo itere por las claves que se encuentren en el rango indicado
 	IteradorRango(desde *K, hasta *K) IterDiccionario[K, V]
 }
+
+type IterDiccionarioOrdenado[K comparable, V any] interface {
+	HayAlgoMas() bool
+	VerActual() (K, V)
+	Avanzar()
+}
