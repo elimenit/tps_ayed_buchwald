@@ -86,7 +86,7 @@ func (a *abb[K, V]) borrarNodo(actual *nodoArbol[K, V], clave K) *nodoArbol[K, V
 	if actual == nil {
 		return nil
 	}
-	comparacion := a.comparar(actual.clave, clave)
+	comparacion := a.comparar(clave, actual.clave)
 
 	if comparacion < 0 {
 		actual.izquierda = a.borrarNodo(actual.izquierda, clave)

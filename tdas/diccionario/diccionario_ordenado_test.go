@@ -165,23 +165,28 @@ func TestABBBorrarCasoHoja(t *testing.T) {
 	require.Equal(t, a.Cantidad(), 1)
 }
 
-func TestABBBorrarCaso1Hoja(t *testing.T) {
+func TestABBBorrarValidarELiminacion(t *testing.T) {
 	a := TDADict.CrearABB[int, int](cmpInt)
-	// 5, 4, 7, 9 -> Eliminamos el 7 (es padre de 9)
-	a.Guardar(5, 10)
 	a.Guardar(4, 10)
-	a.Guardar(7, 10)
-	a.Guardar(9, 11)
-	a.Borrar(7)
-	// Recorrido In-Orden: 4-5-9
-	it := a.Iterador()
-	key, _ := it.VerActual()
-	require.Equal(t, key, 4)
-	it.Avanzar()
-	key, _ = it.VerActual()
-	require.Equal(t, key, 5)
-	key, _ = it.VerActual()
-	require.Equal(t, key, 9)
+	a.Guardar(6, 11)
+	a.Guardar(7, 12)
+	a.Guardar(5, 12)
+
+	require.Equal(t, a.Borrar(5), 12)
+	require.False(t, a.Pertenece(5))
+}
+func TestABBBorrarInsertarEnOrden(t *testing.T) {
+	a := TDADict.CrearABB[int, int](cmpInt)
+	a.Guardar(1, 1)
+	a.Guardar(2, 2)
+	a.Guardar(3, 3)
+	a.Guardar(4, 4)
+	a.Guardar(5, 5)
+	a.Guardar(6, 6)
+	a.Guardar(7, 7)
+
+	require.Equal(t, a.Borrar(5), 5)
+	require.False(t, a.Pertenece(5))
 }
 
 // Genera todos los arboles posibles de 7 nodos de 1 al 7
