@@ -146,6 +146,74 @@ func TestABBBorrar(t *testing.T) {
 	require.Panics(t, func() { a.Borrar(10) })
 	require.Panics(t, func() { a.Borrar(8) })
 }
+func TestABBBorrarCasoHoja(t *testing.T) {
+	a := TDADict.CrearABB[int, int](cmpInt)
+
+	// Arbol 6 -> izq(5) -> der (7) <-> Borraremos el 5 y el 7
+
+	a.Guardar(6, 4)
+	a.Guardar(7, 4)
+	a.Guardar(5, 8)
+	require.Equal(t, a.Cantidad(), 3)
+
+	// Borramos el 5
+	require.Equal(t, a.Borrar(5), 8)
+	require.Equal(t, a.Cantidad(), 2)
+
+	// Borramos el 7
+	require.Equal(t, a.Borrar(7), 4)
+	require.Equal(t, a.Cantidad(), 1)
+}
+
+func TestABBBorrarCaso1Hoja(t *testing.T) {
+	a := TDADict.CrearABB[int, int](cmpInt)
+	// 5, 4, 7, 9 -> Eliminamos el 7 (es padre de 9)
+	a.Guardar(5, 10)
+	a.Guardar(4, 10)
+	a.Guardar(7, 10)
+	a.Guardar(9, 11)
+	a.Borrar(7)
+	// Recorrido In-Orden: 4-5-9
+	it := a.Iterador()
+	key, _ := it.VerActual()
+	require.Equal(t, key, 4)
+	it.Avanzar()
+	key, _ = it.VerActual()
+	require.Equal(t, key, 5)
+	key, _ = it.VerActual()
+	require.Equal(t, key, 9)
+}
+
+// Genera todos los arboles posibles de 7 nodos de 1 al 7
+// con sus diferentes estructuras. Para cada uno, borra los nodos del 5 al 2.
+func TestGeneracionDeTodasLasCombinaciones(t *testing.T) {
+	//a :=TDADiccionario.CrearABB[int, int](cmpInt)
+	// 1 er caso -> 1, 2, 3, 4, 5, 6, 7
+
+	// 2 er caso -> 2, 3, 4, 5, 6, 7, 1
+	// 3 er caso -> 3, 4, 5, 6, 7, 1, 2
+	// 4 er caso -> 4, 5, 6, 7, 1, 2, 3
+	// 5 er caso -> 5, 6, 7, 1, 2, 3, 4
+	// 6 er caso -> 6, 7, 1, 2, 3, 4, 5
+	// 7 er caso -> 7, 1, 2, 3, 4, 5, 6
+}
+func TestBorrarAlgunosElementos(t *testing.T) {
+	a := TDADict.CrearABB[int, int](cmpInt)
+	a.Guardar(1, 2)
+	a.Borrar(1)
+	a.Guardar(3, 5)
+	a.Borrar(3)
+	a.Guardar(6, 7)
+	a.Borrar(6)
+	require.Equal(t, a.Cantidad(), 0)
+
+	a.Guardar(4, 2)
+	a.Guardar(3, 1)
+	a.Guardar(1, 5)
+	a.Guardar(6, 8)
+	require.Equal(t, a.Cantidad(), 4)
+
+}
 
 func TestABBBorrarVolumen(t *testing.T) {
 	a := TDADict.CrearABB[int, int](cmpInt)
