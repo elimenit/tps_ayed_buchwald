@@ -186,18 +186,7 @@ func (a *abb[K, V]) Iterar(visitar func(clave K, dato V) bool) {
 }
 
 func (a *abb[K, V]) Iterador() IterDiccionario[K, V] {
-	iterador := &iterABB[K, V]{
-		pila:     pila.CrearPilaDinamica[*nodoArbol[K, V]](),
-		desde:    nil,
-		hasta:    nil,
-		comparar: a.comparar,
-	}
-	actual := a.raiz
-	for actual != nil {
-		iterador.pila.Apilar(actual)
-		actual = actual.izquierda
-	}
-	return iterador
+	return a.IteradorRango(nil, nil)
 }
 
 func (a *abb[K, V]) IterarRango(desde *K, hasta *K, visitar func(clave K, dato V) bool) {
